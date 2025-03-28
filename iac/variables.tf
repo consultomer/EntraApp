@@ -19,3 +19,9 @@ variable "groups" {
   type    = list(string)
   default = ["GroupA", "GroupB", "GroupC"]
 }
+
+variable "resource_group_name" {
+  type    = string
+  default = "TestingTerraform"
+
+}

@@ -88,7 +88,14 @@ resource "azuread_group_member" "group_members" {
   member_object_id = azuread_user.users[each.value].id
 }
 
-
+# Resource Group
+data "azurerm_resource_group" "tf_backend" {
+  name = var.resource_group_name
+}
+data "azurerm_container_registry" "acr" {
+  name                = "consultomer"
+  resource_group_name = data.azurerm_resource_group.tf_backend.name
+}
 # User-Assigned Identity for ACR Access
 resource "azurerm_user_assigned_identity" "acr_identity" {
   resource_group_name = data.azurerm_resource_group.tf_backend.name
