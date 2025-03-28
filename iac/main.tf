@@ -18,56 +18,75 @@ provider "azurerm" {
 
 provider "azuread" {
   tenant_id = var.tenant_id
-
 }
 
-data "azuread_application_published_app_ids" "well_known" {}
-
+# Get Microsoft Graph Service Principal
 data "azuread_service_principal" "msgraph" {
-  client_id = data.azuread_application_published_app_ids.well_known.result["MicrosoftGraph"]
+  display_name = "Microsoft Graph"
 }
+
+# Define Rotating Secret
 resource "time_rotating" "example" {
   rotation_days = 180
 }
+
+# Create Azure AD Application
 resource "azuread_application" "example" {
   display_name     = "Entra Application"
-  description      = "My Testing entraid application"
+  description      = "My Testing Entra ID application"
   sign_in_audience = "AzureADMyOrg"
+
   password {
     display_name = "MySecret-1"
-    start_date   = time_rotating.example.id
-    end_date     = timeadd(time_rotating.example.id, "4320h")
+    start_date   = timestamp()
+    end_date     = timeadd(timestamp(), "4320h") # 6 months
   }
 }
 
-output "example_password" {
-  sensitive = true
-  value     = tolist(azuread_application.example.password).0.value
+# Create Service Principal
+resource "azuread_service_principal" "example_sp" {
+  client_id = azuread_application.example.application_id
 }
 
-resource "azuread_application_api_access" "example_msgraph" {
+# Assign API Permissions (Microsoft Graph)
+resource "azuread_application_api_permission" "example_permissions" {
   application_id = azuread_application.example.id
-  api_client_id  = data.azuread_application_published_app_ids.well_known.result["MicrosoftGraph"]
 
-  role_ids = [
-    data.azuread_service_principal.msgraph.app_role_ids["Group.Read.All"],
-    data.azuread_service_principal.msgraph.app_role_ids["User.Read.All"],
-  ]
-
-  scope_ids = [
-    data.azuread_service_principal.msgraph.oauth2_permission_scope_ids["User.ReadWrite"],
-  ]
+  dynamic "api_permission" {
+    for_each = toset([
+      "User.Read.All",
+      "Group.Read.All",
+      "Directory.Read.All"
+    ])
+    content {
+      id   = data.azuread_service_principal.msgraph.app_role_ids[api_permission.value]
+      type = "Role"
+    }
+  }
 }
 
+# Admin Consent for API Permissions
+resource "azuread_application_api_oauth2_permission_grant" "admin_consent" {
+  service_principal_object_id = azuread_service_principal.example_sp.object_id
+  client_id                   = azuread_application.example.application_id
+  consent_type                = "AllPrincipals"
+  scope                       = "User.Read.All Group.Read.All"
+}
+
+# Get Azure AD Domains
 data "azuread_domains" "aad_domains" {}
-# Create a user
+
+# Create Users
 resource "azuread_user" "example" {
   for_each            = toset(var.users)
   user_principal_name = "${each.value}@${data.azuread_domains.aad_domains.domains.0.domain_name}"
   display_name        = each.value
   password            = "Password1234!"
 }
+
+# Get Current Client Configuration
 data "azuread_client_config" "current" {}
+
 # Create Groups
 resource "azuread_group" "groups" {
   for_each = toset(var.groups)
@@ -79,24 +98,24 @@ resource "azuread_group" "groups" {
 
 # Assign Users to Groups (2 users per group)
 resource "azuread_group_member" "group_members" {
-  for_each = {
-    for idx, user in var.users : idx => user
-    if idx < length(var.groups) * 2 # Ensure only 2 users per group
-  }
+  for_each = { for idx, user in var.users : idx => user if idx < length(var.groups) * 2 }
 
   group_object_id  = azuread_group.groups[element(var.groups, floor(each.key / 2))].id
   member_object_id = azuread_user.example[each.value].id
 }
 
-# Resource Group
+# Get Resource Group
 data "azurerm_resource_group" "tf_backend" {
   name = var.resource_group_name
 }
+
+# Get Azure Container Registry
 data "azurerm_container_registry" "acr" {
   name                = "consultomer"
   resource_group_name = data.azurerm_resource_group.tf_backend.name
 }
-# User-Assigned Identity for ACR Access
+
+# Create User-Assigned Identity for ACR Access
 resource "azurerm_user_assigned_identity" "acr_identity" {
   resource_group_name = data.azurerm_resource_group.tf_backend.name
   location            = data.azurerm_resource_group.tf_backend.location
@@ -108,4 +127,10 @@ resource "azurerm_role_assignment" "acr_pull" {
   scope                = data.azurerm_container_registry.acr.id
   role_definition_name = "AcrPull"
   principal_id         = azurerm_user_assigned_identity.acr_identity.principal_id
+}
+
+# Output Secret (for debugging)
+output "example_password" {
+  sensitive = true
+  value     = tolist(azuread_application.example.password).0.value
 }
