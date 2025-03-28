@@ -85,7 +85,7 @@ resource "azuread_group_member" "group_members" {
   }
 
   group_object_id  = azuread_group.groups[element(var.groups, floor(each.key / 2))].id
-  member_object_id = azuread_user.users[each.value].id
+  member_object_id = azuread_user.example[each.value].id
 }
 
 # Resource Group
