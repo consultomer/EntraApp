@@ -67,7 +67,7 @@ resource "azuread_user" "example" {
   display_name        = each.value
   password            = "Password1234!"
 }
-
+data "azuread_client_config" "current" {}
 # Create Groups
 resource "azuread_group" "groups" {
   for_each = toset(var.groups)
