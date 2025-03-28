@@ -59,11 +59,11 @@ resource "azuread_application_api_access" "example_msgraph" {
   ]
 }
 
-
+data "azuread_domains" "aad_domains" {}
 # Create a user
 resource "azuread_user" "example" {
   for_each            = toset(var.users)
-  user_principal_name = "${each.value}@${data.azuread_domains.example.domains.0.domain_name}"
+  user_principal_name = "${each.value}@${data.azuread_domains.aad_domains.domains.0.domain_name}"
   display_name        = each.value
   password            = "Password1234!"
 }
