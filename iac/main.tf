@@ -45,32 +45,15 @@ resource "azuread_application" "example" {
 
 # Create Service Principal
 resource "azuread_service_principal" "example_sp" {
-  client_id = azuread_application.example.application_id
+  client_id = azuread_application.example.client_id # Fixed reference
 }
 
-# Assign API Permissions (Microsoft Graph)
-resource "azuread_application_api_permission" "example_permissions" {
-  application_id = azuread_application.example.id
-
-  dynamic "api_permission" {
-    for_each = toset([
-      "User.Read.All",
-      "Group.Read.All",
-      "Directory.Read.All"
-    ])
-    content {
-      id   = data.azuread_service_principal.msgraph.app_role_ids[api_permission.value]
-      type = "Role"
-    }
-  }
-}
-
-# Admin Consent for API Permissions
-resource "azuread_application_api_oauth2_permission_grant" "admin_consent" {
-  service_principal_object_id = azuread_service_principal.example_sp.object_id
-  client_id                   = azuread_application.example.application_id
-  consent_type                = "AllPrincipals"
-  scope                       = "User.Read.All Group.Read.All"
+# Assign API Permissions to Service Principal
+resource "azuread_app_role_assignment" "msgraph_roles" {
+  for_each            = toset(["User.Read.All", "Group.Read.All"])
+  app_role_id         = data.azuread_service_principal.msgraph.app_role_ids[each.value]
+  principal_object_id = azuread_service_principal.example_sp.object_id
+  resource_object_id  = data.azuread_service_principal.msgraph.object_id
 }
 
 # Get Azure AD Domains
