@@ -26,9 +26,29 @@ resource "time_rotating" "example" {
   rotation_days = 180
 }
 
+data "azuread_application_published_app_ids" "well_known" {}
+
+resource "azuread_service_principal" "msgraph" {
+  client_id    = data.azuread_application_published_app_ids.well_known.result.MicrosoftGraph
+  use_existing = true
+}
 resource "azuread_application" "example" {
   display_name = "example"
   owners       = [data.azuread_client_config.current.object_id]
+  required_resource_access {
+    resource_app_id = data.azuread_application_published_app_ids.well_known.result.MicrosoftGraph
+
+    resource_access {
+      id   = azuread_service_principal.msgraph.app_role_ids["User.Read.All"]
+      type = "Role"
+    }
+    resource_access {
+      id   = azuread_service_principal.msgraph.app_role_ids["Group.Read.All"]
+      type = "Role"
+    }
+  }
+  sign_in_audience = "AzureADMyOrg"
+
 
   password {
     display_name = "MySecret-1"
@@ -41,17 +61,11 @@ output "example_password" {
   sensitive = true
   value     = tolist(azuread_application.example.password).0.value
 }
-data "azuread_application_published_app_ids" "well_known" {}
-
 # Create Service Principal
 resource "azuread_service_principal" "example_sp" {
   client_id                    = azuread_application.example.client_id # Fixed reference
   app_role_assignment_required = true
   owners                       = [data.azuread_client_config.current.object_id]
-}
-resource "azuread_service_principal" "msgraph" {
-  client_id    = data.azuread_application_published_app_ids.well_known.result.MicrosoftGraph
-  use_existing = true
 }
 # Assign API Permissions to Service Principal
 resource "azuread_app_role_assignment" "msgraph_roles" {
