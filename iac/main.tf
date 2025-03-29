@@ -177,10 +177,6 @@ resource "azurerm_container_app" "entrapp" {
         name  = "TENANT_ID"
         value = var.tenant_id
       }
-      env {
-        name  = "REDIRECT_PATH"
-        value = azurerm_container_app.entrapp.ingress[0].fqdn
-      }
 
     }
   }
