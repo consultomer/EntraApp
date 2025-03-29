@@ -2,7 +2,7 @@ import os, json, requests
 from flask import Flask, redirect, url_for, render_template, session, request
 from flask_session import Session
 import msal
-import app.app_config as app_config
+import app_config as app_config
 
 app = Flask(__name__)
 app.config.from_object(app_config)
