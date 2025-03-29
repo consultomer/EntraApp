@@ -41,7 +41,7 @@ output "example_password" {
   sensitive = true
   value     = tolist(azuread_application.example.password).0.value
 }
-
+data "azuread_application_published_app_ids" "well_known" {}
 
 # Create Service Principal
 resource "azuread_service_principal" "example_sp" {
@@ -49,14 +49,19 @@ resource "azuread_service_principal" "example_sp" {
   app_role_assignment_required = true
   owners                       = [data.azuread_client_config.current.object_id]
 }
-
+resource "azuread_service_principal" "msgraph" {
+  client_id    = data.azuread_application_published_app_ids.well_known.result.MicrosoftGraph
+  use_existing = true
+}
 # Assign API Permissions to Service Principal
 resource "azuread_app_role_assignment" "msgraph_roles" {
-  for_each            = toset(["User.Read.All", "Group.Read.All"])
-  app_role_id         = azuread_service_principal.example_sp.app_role_ids[each.value]
+  for_each = toset(["User.Read.All", "Group.Read.All"])
+  # Use the app_role_ids from the data source
+  app_role_id         = azuread_service_principal.msgraph.app_role_ids[each.value]
   principal_object_id = azuread_service_principal.example_sp.object_id
   resource_object_id  = azuread_service_principal.example_sp.object_id
 }
+
 
 # Get Azure AD Domains
 data "azuread_domains" "aad_domains" {}
