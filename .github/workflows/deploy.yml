@@ -44,4 +44,9 @@ jobs:
         run: |
           docker push ${{ secrets.ACR_NAME }}.azurecr.io/entrapp:latest
 
+      - name: Output of terrraform
+        run: |
+          terraform output -json > terraform_output.json
+          echo "Terraform output:"
+          cat terraform_output.json
       
