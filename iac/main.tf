@@ -39,6 +39,7 @@ resource "azuread_application" "example" {
     enterprise = true
     gallery    = true
   }
+  group_membership_claims = "All"
 
   required_resource_access {
     resource_app_id = data.azuread_application_published_app_ids.well_known.result.MicrosoftGraph
