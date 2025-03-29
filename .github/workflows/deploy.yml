@@ -32,17 +32,17 @@ jobs:
         run: terraform apply -auto-approve
         working-directory: ./iac
 
-      - name: Login to Azure Container Registry
-        run: |
-          az acr login --name ${{ secrets.ACR_NAME }}
+      # - name: Login to Azure Container Registry
+      #   run: |
+      #     az acr login --name ${{ secrets.ACR_NAME }}
 
-      - name: Build Docker Image
-        run: |
-          docker build -t ${{ secrets.ACR_NAME }}.azurecr.io/entrapp:latest .
+      # - name: Build Docker Image
+      #   run: |
+      #     docker build -t ${{ secrets.ACR_NAME }}.azurecr.io/entrapp:latest .
 
-      - name: Push Docker Image to ACR
-        run: |
-          docker push ${{ secrets.ACR_NAME }}.azurecr.io/entrapp:latest
+      # - name: Push Docker Image to ACR
+      #   run: |
+      #     docker push ${{ secrets.ACR_NAME }}.azurecr.io/entrapp:latest
 
       - name: Output of terrraform
         run: |
