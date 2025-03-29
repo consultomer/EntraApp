@@ -35,6 +35,11 @@ resource "azuread_service_principal" "msgraph" {
 resource "azuread_application" "example" {
   display_name = "example"
   owners       = [data.azuread_client_config.current.object_id]
+  feature_tags {
+    enterprise = true
+    gallery    = true
+  }
+
   required_resource_access {
     resource_app_id = data.azuread_application_published_app_ids.well_known.result.MicrosoftGraph
 
@@ -138,7 +143,7 @@ resource "azurerm_role_assignment" "acr_pull" {
   principal_id         = azurerm_user_assigned_identity.acr_identity.principal_id
 }
 
-# Frontend Container App
+
 resource "azurerm_container_app" "entrapp" {
   name                         = "entrapp"
   container_app_environment_id = azurerm_container_app_environment.env.id
@@ -172,13 +177,16 @@ resource "azurerm_container_app" "entrapp" {
         name  = "TENANT_ID"
         value = var.tenant_id
       }
+      env {
+        name  = "REDIRECT_PATH"
+        value = azurerm_container_app.entrapp.ingress[0].fqdn
+      }
 
     }
   }
   ingress {
     external_enabled = true
     target_port      = 5030
-    transport        = https
     traffic_weight {
       percentage      = 100
       latest_revision = true
