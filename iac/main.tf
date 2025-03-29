@@ -178,6 +178,7 @@ resource "azurerm_container_app" "entrapp" {
   ingress {
     external_enabled = true
     target_port      = 5030
+    transport        = https
     traffic_weight {
       percentage      = 100
       latest_revision = true
