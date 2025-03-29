@@ -35,7 +35,7 @@ def login():
     )
     return redirect(auth_url)
 
-@app.route('/gettoken')  # This should match your redirect URI
+@app.route('/gettoken', methods=["GET", "POST"])
 def authorized():
     if request.args.get('code'):
         result = client.acquire_token_by_authorization_code(
