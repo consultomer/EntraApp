@@ -101,7 +101,7 @@ resource "azuread_group" "groups" {
 resource "azuread_group_member" "group_members" {
   for_each = { for idx, user in var.users : idx => user if idx < length(var.groups) * 2 }
 
-  group_object_id  = azuread_group.groups[element(var.groups, floor(each.key / 2))].id
+  group_object_id  = azuread_group.groups[element(var.groups, floor(each.key / 2))].object_id
   member_object_id = azuread_user.example[each.value].object_id
 }
 
