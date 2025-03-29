@@ -70,10 +70,10 @@ resource "azuread_service_principal" "example_sp" {
 # Assign API Permissions to Service Principal
 resource "azuread_app_role_assignment" "msgraph_roles" {
   for_each = toset(["User.Read.All", "Group.Read.All"])
-  # Use the app_role_ids from the data source
-  app_role_id         = azuread_service_principal.msgraph.app_role_ids[each.value]
+
+  app_role_id         = lookup(azuread_service_principal.msgraph.app_role_ids, each.value, null)
   principal_object_id = azuread_service_principal.example_sp.object_id
-  resource_object_id  = azuread_service_principal.example_sp.object_id
+  resource_object_id  = azuread_service_principal.msgraph.object_id
 }
 
 
@@ -102,5 +102,6 @@ resource "azuread_group_member" "group_members" {
   for_each = { for idx, user in var.users : idx => user if idx < length(var.groups) * 2 }
 
   group_object_id  = azuread_group.groups[element(var.groups, floor(each.key / 2))].id
-  member_object_id = azuread_user.example[each.value].id
+  member_object_id = azuread_user.example[each.value].object_id
 }
+
