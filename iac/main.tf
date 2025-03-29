@@ -195,4 +195,5 @@ resource "azuread_application_redirect_uris" "example_web" {
   redirect_uris = [
     "https://${azurerm_container_app.entrapp.ingress[0].fqdn}/gettoken"
   ]
+  depends_on = [azurerm_container_app.entrapp]
 }
