@@ -69,9 +69,6 @@ resource "azuread_user" "example" {
   password            = "Password1234!"
 }
 
-# Get Current Client Configuration
-data "azuread_client_config" "current" {}
-
 # Create Groups
 resource "azuread_group" "groups" {
   for_each = toset(var.groups)
