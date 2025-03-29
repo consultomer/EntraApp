@@ -188,3 +188,11 @@ resource "azurerm_container_app" "entrapp" {
     identity = azurerm_user_assigned_identity.acr_identity.id
   }
 }
+resource "azuread_application_redirect_uris" "example_web" {
+  application_id = azuread_application.example.id
+  type           = "Web"
+
+  redirect_uris = [
+    "https://${azurerm_container_app.entrapp.ingress[0].fqdn}/gettoken"
+  ]
+}
