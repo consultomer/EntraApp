@@ -53,9 +53,9 @@ resource "azuread_service_principal" "example_sp" {
 # Assign API Permissions to Service Principal
 resource "azuread_app_role_assignment" "msgraph_roles" {
   for_each            = toset(["User.Read.All", "Group.Read.All"])
-  app_role_id         = data.azuread_service_principal.msgraph.app_role_ids[each.value]
+  app_role_id         = data.azuread_service_principal.example_sp.app_role_ids[each.value]
   principal_object_id = azuread_service_principal.example_sp.object_id
-  resource_object_id  = data.azuread_service_principal.msgraph.object_id
+  resource_object_id  = data.azuread_service_principal.example_sp.object_id
 }
 
 # Get Azure AD Domains
