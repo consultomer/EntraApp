@@ -1,4 +1,4 @@
-import os, json
+import os, json, requests
 from flask import Flask, redirect, url_for, render_template, session, request
 from flask_session import Session
 import msal
@@ -25,7 +25,7 @@ client = msal.ConfidentialClientApplication(
 def index():
     if not session.get("user"):
         return redirect(url_for("login"))
-    return render_template('index.html', user=session["user"])
+    return render_template('index.html', user=session["user"], groups=session.get("groups"))
 
 @app.route('/login')
 def login():
@@ -47,9 +47,26 @@ def authorized():
             with open("token.json", "w") as f:
                 json.dump(result, f, indent=4)
             session["user"] = result["id_token_claims"]
+            session["groups"] = get_user_groups(result["access_token"])
             return redirect(url_for('index'))
         return "Login failed: " + result.get("error_description", "Unknown error")
     return redirect(url_for('index'))
+
+def get_user_groups(access_token):
+    """Query Microsoft Graph to get user's group memberships"""
+    graph_url = "https://graph.microsoft.com/v1.0/me/memberOf"
+    headers = {
+        "Authorization": f"Bearer {access_token}",
+        "Content-Type": "application/json"
+    }
+    response = requests.get(graph_url, headers=headers)
+    
+    if response.status_code == 200:
+        groups = response.json().get("value", [])
+        return [group["id"] for group in groups]  # Return list of group IDs
+    else:
+        print(f"Error fetching groups: {response.text}")
+        return []
 
 @app.route('/logout')
 def logout():
@@ -67,6 +84,8 @@ def logout():
     # Redirect to Entra ID logout endpoint
     from urllib.parse import urlencode
     return redirect(f"{logout_url}?{urlencode(logout_params)}")
+
+
 
 if __name__ == '__main__':
     app.run(debug=True, port=5030, host="0.0.0.0")

@@ -9,11 +9,27 @@
     {% if user %}
     <h1>Welcome, {{ user.name }}!</h1>
     <p>Email: {{ user.preferred_username }}</p>
+    
+    {% if groups %}
+    {% if "GroupA" in groups %}
+    <p>Welcome To Admin Dashboard</p>
+    {% elif "GroupB" in groups %}
+    <p>Welcome To User Dashboard</p>
+    {% elif "GroupC" in groups %}
+    <p>Welcome To Client Dashboard</p>
+    {% else %}
+    <p>Welcome To Guest Dashboard</p>
+    {% endif %}
+    {% else %}
+    <p>This user is not in any Group</p>
+    {% endif %}
+    
     <a href="{{ url_for('logout') }}">Logout</a>
     {% else %}
     <h1>Welcome</h1>
     <a href="{{ url_for('login') }}">Login with Entra ID</a>
     {% endif %}
+
 </body>
 
 </html>
