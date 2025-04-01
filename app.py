@@ -48,6 +48,7 @@ def authorized():
                 json.dump(result, f, indent=4)
             session["user"] = result["id_token_claims"]
             session["groups"] = get_user_groups(result["access_token"])
+            
             return redirect(url_for('index'))
         return "Login failed: " + result.get("error_description", "Unknown error")
     return redirect(url_for('index'))
@@ -62,8 +63,10 @@ def get_user_groups(access_token):
     response = requests.get(graph_url, headers=headers)
     
     if response.status_code == 200:
+        with open("user.json", "w") as f:
+            json.dump(response.json(), f, indent=4)
         groups = response.json().get("value", [])
-        return [group["id"] for group in groups]  # Return list of group IDs
+        return [group["displayName"] for group in groups]  # Return list of group IDs
     else:
         print(f"Error fetching groups: {response.text}")
         return []
