@@ -1,4 +1,4 @@
-# PlexInformer Project
+# EntraApp Project
 
 ## Table of Contents
 - [Introduction](#introduction)
