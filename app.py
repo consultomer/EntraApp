@@ -1,12 +1,15 @@
 import os, json, requests
 from flask import Flask, redirect, url_for, render_template, session, request
 from flask_session import Session
+from werkzeug.middleware.proxy_fix import ProxyFix
 import msal
 import app_config as app_config
 
 app = Flask(__name__)
 app.config.from_object(app_config)
-
+app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_port=1)
+app.config['APPLICATION_ROOT'] = '/'
+app.config['PREFERRED_URL_SCHEME'] = 'https'
 # Add session configuration
 app.config['SESSION_TYPE'] = 'filesystem'  # Using filesystem for session storage
 app.config['SESSION_PERMANENT'] = False
@@ -44,8 +47,6 @@ def authorized():
             redirect_uri=url_for('authorized', _external=True)
         )
         if "access_token" in result:
-            with open("token.json", "w") as f:
-                json.dump(result, f, indent=4)
             session["user"] = result["id_token_claims"]
             session["groups"] = get_user_groups(result["access_token"])
             
@@ -63,8 +64,6 @@ def get_user_groups(access_token):
     response = requests.get(graph_url, headers=headers)
     
     if response.status_code == 200:
-        with open("user.json", "w") as f:
-            json.dump(response.json(), f, indent=4)
         groups = response.json().get("value", [])
         return [group["displayName"] for group in groups]  # Return list of group IDs
     else:
